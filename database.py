@@ -25,7 +25,7 @@ max_universe_card=13
 
 # generation range for number of basis sets
 min_basis_sets=3
-max_basis_sets=20 # union close currently needs up to 2**n operations
+max_basis_sets=14 # union close currently needs up to 2**n operations
 
 # generation range for minimum member cardinality
 min_member_card_min=1
@@ -109,16 +109,31 @@ def genfamilies(m,basis_sets,target_min_member_card,target_max_member_card):
     # our population as list and set
     pop=[]
     popset=set()
+    # keep track of what we have tried
+    initial_families=set()
     consecutivefailures=0
     while consecutivefailures < 1000:
         consecutivefailures+=1
         A=[]
         # pick members (unbiased)
-        for dummy in range(basis_sets):
+        while len(A) < basis_sets:
             # pick weighted random member size
             card=random_member_size(m,target_min_member_card,target_max_member_card)
             # choose elements randomly from universe
-            A.append(familymember(random.sample(universe,card)))
+            # try it up to basis_sets*10 times in case search space is small
+            for dummy in xrange(basis_sets*10):
+                new_member=familymember(random.sample(universe,card))
+                if new_member not in A:
+                    break
+            # search space too small
+            if new_member in A:
+                break
+            A.append(new_member)
+
+        A=frozenset(A)
+        if A in initial_families:
+            continue
+        initial_families.add(A)
 
         A=fertilefamily(A)
         if A.fitness is None:
