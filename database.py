@@ -103,15 +103,26 @@ def genfamilies(m,basis_sets,target_min_member_card,target_max_member_card):
         return
     if target_max_member_card*basis_sets < m:
         return
+
+    # if the program is run several times, it will retry parameters tuples
+    # for which no random family has been generated
+    for cnt, in query("select count(*) from families where basis_sets_optimized is null and m=%s and basis_sets=%s and target_min_member_card=%s and target_max_member_card=%s",(m,basis_sets,target_min_member_card,target_max_member_card)):
+        if cnt:
+            return
+
     print "m",m,"basis sets",basis_sets,"min_member_card",target_min_member_card,"max_member_card",target_max_member_card
     sys.stdout.flush()
+
     universe=range(1,m+1)
+
     # our population as list and set
     pop=[]
     popset=set()
+
     # keep track of what we have tried
     initial_families=set()
     consecutivefailures=0
+
     while consecutivefailures < 1000:
         consecutivefailures+=1
         A=[]
