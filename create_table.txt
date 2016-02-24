@@ -1,0 +1,17 @@
+CREATE TABLE `families` (
+  `familyid` bigint(20) NOT NULL AUTO_INCREMENT,
+  `family` mediumtext NOT NULL,
+  `m` int(11) NOT NULL,
+  `n` int(11) NOT NULL,
+  `abundant_elements_total` float NOT NULL,
+  `abundant_elements` int(11) NOT NULL,
+  `basis_sets` int(11) NOT NULL,
+  `totalsize` int(11) NOT NULL,
+  `target_min_member_card` int(11) NOT NULL,
+  `target_max_member_card` int(11) NOT NULL,
+  `min_member_card` int(11) NOT NULL,
+  `max_member_card` int(11) NOT NULL,
+  `avg_member_card` float NOT NULL,
+  `basis_sets_optimized` int(11) DEFAULT NULL,
+  PRIMARY KEY (`familyid`)
+);
