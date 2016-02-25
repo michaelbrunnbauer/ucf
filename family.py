@@ -151,41 +151,36 @@ class family(object):
                 self.basis_sets.discard(union)
 
     # optimistic union close
-    # tries recursive approach on a copy first. switches to unionclose1() as 
+    # tries all pairs on a copy first. switches to unionclose1() as 
     # soon as it will be faster
     # calculates the basis sets
     # will add the empty set if missing
-    def unionclose(self,A=None):
-        # first call. make a copy of ourself in A and work with the copy
-        if A is None:
-            self.basis_sets=set(self.as_list)
-            A=copy.deepcopy(self)
+    def unionclose(self):
 
-        # if we have more pairs than in the powerset of our inital version,
-        # switch to worst case approach
-        n=len(A)
-        if (n*(n-1)/2) >= 2**len(self):
-            self.unionclose1()
-            self.add(familymember([]))
-            return
+        def pairs(n):
+            return (n*(n-1))/2
 
-        # do the union for all pairs and recurse if we got new members
-        for i1 in range(n):
-            for i2 in range(i1+1,n):
-                first_set=A.as_list[i1]
+        self.basis_sets=set(self.as_list)
+        A=copy.deepcopy(self)
+        worst_case=2**len(self)
+        i1=1
+        while i1 < len(A):
+            # switch to unionclose1 if we have more pairs left than subsets
+            # of the original family
+            if pairs(len(A)) - pairs(i1) >= worst_case:
+                self.unionclose1()
+                self.add(familymember([]))
+                return
+            first_set=A.as_list[i1] 
+            for i2 in xrange(i1):
                 second_set=A.as_list[i2]
                 union=first_set.union(second_set)
                 if union==first_set or union==second_set:
                     continue
                 A.add(union)
                 self.basis_sets.discard(union)
-
-        if len(A)==n:
-            # no new members, we are finished and copy the results from A
-            self.as_list=A.as_list
-            self.as_dict=A.as_dict
-            self.elem_count=A.elem_count
-            self.add(familymember([]))
-        else:
-            # new members -> recursion
-            self.unionclose(A)
+            i1+=1
+        self.as_list=A.as_list
+        self.as_dict=A.as_dict
+        self.elem_count=A.elem_count 
+        self.add(familymember([]))  
