@@ -1,39 +1,12 @@
-import sys,copy
+import sys,copy,itertools
 
 # in case we want to replace frozenset with something else later
 familymember=frozenset
 
-# returns the indexes of the 1-bits of n. used for the worst case union
-# close algorithm, which does the union of all subsets of the family.
-bitindex_cache={}
-def bitindexes(n):
-    indexes=bitindex_cache.get(n)
-    if indexes is not None:
-        return indexes
-    indexes=[]
-    n1=n
-    i=0
-    while n1:
-        if n1 & 1:
-            indexes.append(i)
-        n1>>=1
-        i+=1
-    bitindex_cache[n]=tuple(indexes)
-    return indexes
-
-# returns the powerset of a set of cardinality n as list of lists of member
-# indexes - excluding the empty set. used for the worst case union close 
-# algorithm as described above.
-pset_cache={}
-def pset(n):
-    indexes=pset_cache.get(n)
-    if indexes is not None:
-        return indexes
-    indexes=[]
-    for subsetindex in xrange(1,2**n):
-        indexes.append(bitindexes(subsetindex))
-    pset_cache[n]=tuple(indexes)
-    return indexes
+# without empty set!
+def powerset_without_0(A):
+    s=list(A)
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(1,len(s)+1))
 
 class family(object):
 
@@ -168,20 +141,13 @@ class family(object):
     def unionclose1(self):
         self.basis_sets=set(self.as_list)
         n=len(self)
-        for indexes in pset(n):
-            # combine members defined by indexes with union and add the result
-            union=None
-            for setindex in indexes:
-                if union is None:
-                    union=self.as_list[setindex]
-                else:
-                    union=union.union(self.as_list[setindex])
-            assert union is not None
+        empty=familymember([])
+        for members in powerset_without_0(self.as_list):
+            union=empty.union(*members)
             i=self.add(union)
             # i is the index of union in the family
             # i < n means union was in the initial family
-            # i in indexes means union is one of the members that were combined
-            if i < n and i not in indexes:
+            if i < n and union not in members:
                 self.basis_sets.discard(union)
 
     # optimistic union close

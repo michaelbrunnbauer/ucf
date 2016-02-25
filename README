@@ -23,5 +23,5 @@ Families will be saved in a MySQL database together with characteristics:
 Families breeded from the selected families with a genetic algorithm 
 optimizing for minimum total abundance will also be saved.
 
-If the program is run several times, it will retry parameters tuples for which
+If the program is run several times, it will retry parameter tuples for which
 no random family has been generated yet.
