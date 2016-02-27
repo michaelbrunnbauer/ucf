@@ -10,7 +10,7 @@ def powerset_without_0(A):
 
 class family(object):
 
-    def __init__(self):
+    def __init__(self,members=None):
         # the members as list. accessing the members by index can be useful
         self.as_list=[]
         # the members as dictionary
@@ -19,6 +19,16 @@ class family(object):
         self.elem_count=None
         # basis sets will be computed when doing the union close
         self.basis_sets=None
+        if members is not None:
+            for member in members:
+                self.add(member)
+
+    def __contains__(self, member):
+        assert type(member) is familymember
+        return member in self.as_dict
+
+    def __iter__(self):
+        return self.as_list.__iter__()
 
     # make sure that element frequencies are in self.elem_count
     def require_elem_count(self):
@@ -184,3 +194,73 @@ class family(object):
         self.as_dict=A.as_dict
         self.elem_count=A.elem_count 
         self.add(familymember([]))  
+
+    # returns a dictionary mapping frequencies to elements
+    def count_to_elem(self):
+        self.require_elem_count()
+        result={}
+        for elem,count in self.elem_count.items():
+            if count not in result:
+                result[count]=[]
+            result[count].append(elem)
+        return result
+
+    # if self isomorphic to other via mapping?
+    def is_isomorphic_with_mapping(self,other,mapping):
+        def map(member):
+            result=[]
+            for elem in member:
+                result.append(mapping[elem])
+            return familymember(result)
+        if len(self)!=len(other):
+            return False
+        for member in self.as_list:
+            if map(member) not in other:
+                return False
+        return True
+
+    # is self isomorphic to other?
+    def is_isomorphic_to(self,other):
+        assert type(other) is family
+        # check size first
+        if len(self)!=len(other):
+             return False
+        # compare element frequencies
+        self.require_elem_count()
+        other.require_elem_count()
+        elem_count1=self.elem_count.values()
+        elem_count2=other.elem_count.values()
+        elem_count1.sort()
+        elem_count2.sort()
+        if elem_count1 != elem_count2:
+            return False
+
+        # map frequencies to elements for other
+        count_to_elem=other.count_to_elem()
+
+        # generator for possible mappings
+        def maps(elems1,elems2,todo):
+            todo=list(todo)
+            # map another element and recurse
+            elem,count=todo.pop()
+            elems1.append(elem)
+            # candidates must have the same frequency
+            for candidate in count_to_elem[count]:
+                if candidate in elems2:
+                    continue
+                elems2.append(candidate)
+                if not todo:
+                    yield elems1,elems2
+                else:
+                    for map in maps(elems1,elems2,todo):
+                        yield map
+                elems2.pop()
+            elems1.pop()
+        # check possible mappings
+        for e1,e2 in maps([],[],self.elem_count.items()):
+            assert len(e1)==len(e2)
+            mapping=dict(zip(e1,e2))
+            if self.is_isomorphic_with_mapping(other,mapping):
+                return True
+
+        return False
