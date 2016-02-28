@@ -78,6 +78,8 @@ class family(object):
         i=self.as_dict[member]
         if self.elem_count is not None:
             self.elem_count=None
+        if self.basis_sets is not None:
+            self.basis_sets=None
         del self.as_list[i]
         del self.as_dict[member]
         while i < len(self.as_list):

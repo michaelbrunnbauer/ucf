@@ -1,3 +1,6 @@
+This code has been tested with Python 2.7.x and will not run with Python 3.x
+yet as is relies on / being floor division.
+
 systematic.py is called with the size m of the universe as command line argument
 and will search all families that separate this universe for families where 
 the total abundance is lower than m. This is feasible for m <= 5.
@@ -5,8 +8,8 @@ the total abundance is lower than m. This is feasible for m <= 5.
 The total abundance is the sum of (frequency - n/2 + 1) for all abundant
 elements.
 
-database.py (tested with Python 2.7.x) will let you generate random, union 
-closed, separating families as a function of several parameters:
+database.py will let you generate random, union closed, separating families as
+a function of several parameters:
 
  universe size m
  number of basis sets
