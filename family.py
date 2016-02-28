@@ -43,7 +43,7 @@ class family(object):
     def avg_size_too_big(self):
         self.require_elem_count()
         target=len(self)*len(self.elem_count)
-        target=target/2 + target%2
+        target=target//2 + target%2
         return sum(self.elem_count.values()) >= target
 
     # will output a message, statistics and the optional basis sets
@@ -125,7 +125,7 @@ class family(object):
     def abundant_elements(self):
         self.require_elem_count()
         min_len=len(self)
-        min_len = min_len / 2 + min_len % 2
+        min_len = min_len // 2 + min_len % 2
         result=[]
         for elem,count in self.elem_count.items():
             if count >= min_len:
@@ -137,7 +137,7 @@ class family(object):
         self.unionclose()
         self.require_elem_count()
         min_len=len(self)
-        min_len = min_len / 2 + min_len % 2
+        min_len = min_len // 2 + min_len % 2
         for count in self.elem_count.values():
             if count >= min_len:
                 return

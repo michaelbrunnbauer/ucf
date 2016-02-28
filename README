@@ -1,5 +1,4 @@
-This code has been tested with Python 2.7.x and will not run with Python 3.x
-yet as is relies on / being floor division.
+This code was written for Python 2.x and has been tested with Python 2.7.x.
 
 systematic.py is called with the size m of the universe as command line argument
 and will search all families that separate this universe for families where 
