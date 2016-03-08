@@ -11,9 +11,9 @@ database.py will let you generate random, union closed, separating families as
 a function of several parameters:
 
  universe size m
- number of basis sets
- target minimum member cardinality
- target maximum member cardinality
+ number of basis sets (excluding the empty set, which is implicit)
+ target minimum member cardinality (without empty set)
+ target maximum member cardinality (of basis sets)
 
 The members are drawn uniformly from the search space defined by the four
 parameters above. This means that you will find less families with members of
@@ -25,9 +25,9 @@ Families will be saved in a MySQL database together with characteristics:
  number of abundant elements
  total abundance
  total size
- minimum member cardinality
- maximum member cardinality
- average member cardinality
+ minimum member cardinality (without empty set)
+ maximum member cardinality (of basis sets)
+ average member cardinality (of basis sets without empty set)
 
 Families breeded from the selected families with a genetic algorithm 
 optimizing for minimum total abundance will also be saved.

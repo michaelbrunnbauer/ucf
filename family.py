@@ -2,6 +2,7 @@ import sys,copy,itertools
 
 # in case we want to replace frozenset with something else later
 familymember=frozenset
+emptymember=familymember([])
 
 # without empty set!
 def powerset_without_0(A):
@@ -20,7 +21,7 @@ class family(object):
         self.as_dict={}
         # optional element frequencies
         self.elem_count=None
-        # basis sets and parents will be computed when doing the union close
+        # basis sets will be computed when doing the union close
         self.basis_sets=None
         # self.remove() can be revoked with self.unremove()
         # this is the stack used for it
@@ -33,7 +34,7 @@ class family(object):
         
         if members is not None:
             for member in members:
-                self.add(member)
+                self._add(member)
 
     def __contains__(self, member):
         assert type(member) is familymember
@@ -72,18 +73,30 @@ class family(object):
     def __len__(self):
         return len(self.as_list)
 
-    # add a member
-    def add(self,member):
+    # add a member (internal)
+    def _add(self,member):
         i=self.as_dict.get(member)
         if i is not None:
             return i
-        assert type(member) is familymember
-        if self.elem_count is not None:
-            self.elem_count=None
         i=len(self.as_list)
         self.as_list.append(member)
         self.as_dict[member]=i
         return i
+
+    # add a member
+    def add(self,member):
+        assert type(member) is familymember
+        if self.elem_count is not None:
+            self.elem_count=None
+        if self.basis_sets is not None:
+            self.basis_sets=None
+        if self.remove_stack:
+            self.remove_stack=[]
+        if self.parents is not None:
+            self.parents=None
+            self.childs_by_mother=None
+            self.childs_by_father=None
+        return self._add(member)
 
     # remove a member
     # after union close, only basis sets can be removed
@@ -154,9 +167,12 @@ class family(object):
                 result.append(elem)
         return result
 
-    # do the union close and check the union closed conjecture
+    # do the union close, add the empty set and check the union closed
+    # conjecture
     def check_union_closed_conjecture(self):
         self.unionclose()
+        self._add(emptymember)
+        self.basis_sets.add(emptymember)
         self.require_elem_count()
         min_len=len(self)
         min_len = min_len // 2 + min_len % 2
@@ -220,7 +236,9 @@ class family(object):
     # reverse last call of self.remove(). nice for search trees
     def unremove(self):
         member,parent_tracking_actions=self.remove_stack.pop()
-        self.add(member)
+        self._add(member)
+        if self.elem_count is not None:
+            self.elem_count=None
         if not self.parent_tracking:
             if self.basis_sets is not None:
                 self.basis_sets=None
@@ -238,32 +256,31 @@ class family(object):
         
     # worst case union close (used only if necessary)
     # do the union of the members for all subsets and calculate the basis sets
-    # will add the empty set if missing
     def unionclose1(self):
+        if self.elem_count is not None:
+            self.elem_count=None
         self.basis_sets=set(self.as_list)
         assert not self.parent_tracking
         n=len(self)
-        empty=familymember([])
         for members in powerset_without_0(self.as_list):
-            union=empty.union(*members)
-            i=self.add(union)
+            union=emptymember.union(*members)
+            i=self._add(union)
             # i is the index of union in the family
             # i < n means union was in the initial family
             if i < n and union not in members:
                 self.basis_sets.discard(union)
-        self.add(empty)
-        self.basis_sets.add(empty)
 
     # optimistic union close
     # tries all pairs on a copy first. switches to unionclose1() as 
     # soon as it will be faster
     # calculates the basis sets
-    # will add the empty set if missing
     def unionclose(self):
 
         def pairs(n):
             return (n*(n-1))/2
 
+        if self.elem_count is not None:
+            self.elem_count=None
         self.basis_sets=set(self.as_list)
         if self.parent_tracking:
             self.parents={}
@@ -285,7 +302,7 @@ class family(object):
                 union=first_set.union(second_set)
                 if union==first_set or union==second_set:
                     continue
-                A.add(union)
+                A._add(union)
                 self.basis_sets.discard(union)
                 if self.parent_tracking:
                     self.add_parents(union,first_set,second_set)
@@ -293,8 +310,6 @@ class family(object):
         self.as_list=A.as_list
         self.as_dict=A.as_dict
         self.elem_count=A.elem_count 
-        self.add(familymember([]))  
-        self.basis_sets.add(familymember([]))
 
     # returns a dictionary mapping frequencies to elements
     def count_to_elem(self):

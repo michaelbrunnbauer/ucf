@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
 import sys,copy,random
-from family import familymember,family
+from family import familymember,emptymember,family
 
 # search all separating families for a given universe for families where
 # the sum of (frequency - n/2 + 1) for all abundant elements is lower than m
+# only families with the empty set are considered
 
 # supply size of universe as command line argument
 m=int(sys.argv[1])
@@ -23,7 +24,7 @@ avoid_isomorphisms=True
 #rlimit=sys.getrecursionlimit()
 #sys.setrecursionlimit(2*rlimit)
 
-# sorts members (try bigger members first, then randomly)
+# sorts members (by descending cardinality, then randomly)
 def member_cmp(A,B):
     if len(A) > len(B):
         return -1
@@ -75,7 +76,7 @@ def search(A,dontremove):
         cnt+=1
 
         if not parent_tracking:
-            B.check_union_closed_conjecture()
+            B.unionclose()
 
         score=B.abundant_elements_total()
         # we have a new optimum, print it
@@ -123,10 +124,11 @@ def search(A,dontremove):
 
 # build the power set of the universe and start the search with it
 A=family(parent_tracking=parent_tracking)
+A.add(emptymember)
 for elem in range(1,m+1):
     A.add(familymember([elem]))
 A.unionclose()
 bestscore=A.abundant_elements_total()
-cnt=0
+cnt=1
 search(A,[])
 print cnt,"separating families searched"

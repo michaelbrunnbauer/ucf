@@ -1,5 +1,5 @@
 import sys,random
-from family import familymember,family
+from family import familymember,emptymember,family
 
 # elementwise addition of tuples A and B
 def tuple_add(A,B):
@@ -123,6 +123,8 @@ def move_elem(A,min_member_card,max_member_card):
     return A
 
 # a union closed family that can reproduce using the functions defined above
+# BEWARE: the empty set will not be counted as basis set but will be implicitly
+# added to the union closed variant
 class fertilefamily(object):
 
     # initialize from a list of members
@@ -139,10 +141,11 @@ class fertilefamily(object):
 
         m=len(A.elem_count)
 
-        # do the union close and get the basis sets
+        # do the union close, add the empty set and get the basis sets 
+        # (without empty set)
         A.check_union_closed_conjecture()
 
-        B=frozenset(A.basis_sets)
+        B=frozenset([member for member in A.basis_sets if member!=emptymember])
 
         # see if this is a case for which the union closed conjecture is proven
         n=len(A)
@@ -223,7 +226,7 @@ class fertilefamily(object):
         fertility=(self.age+1)/float(self.childs+1)
         return str(self.abundant_elements_total)+' of '+str(self.totalsize)+' total elements abundant, '+str(self.abundant_elements)+' elements abundant, card '+str(len(self))+', n '+str(self.n)+', age '+str(self.age)+', fertility '+str(fertility)+', avgchildfitness '+str(avgchildfitness)+', members '+repr(self.members)
 
-    # minimum member cardinality
+    # minimum member cardinality (without empty set)
     def min_cardinality(self):
         min=None
         for member in self.members:
@@ -244,7 +247,7 @@ class fertilefamily(object):
                 max=l
         return max
 
-    # average member cardinality
+    # average member cardinality (without empty set)
     def avg_cardinality(self):
         sum=0.0
         for member in self.members:

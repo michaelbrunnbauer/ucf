@@ -4,7 +4,7 @@
 # a MySQL database table with the structure defined in create_table.txt
 #
 # -the field family contains a serialization of the basis sets generated with 
-#  repr()
+#  repr(). the empty set as basis set is implicit
 # -abundant_elements_total is the sum of frequency - n/2 + 1 for all abundant
 #  elements
 # -target_min_member_card and target_max_member_card are the targets for
@@ -23,11 +23,11 @@ from reproduction import fertilefamily,train,popstats,trim1
 min_universe_card=13
 max_universe_card=13
 
-# generation range for number of basis sets
+# generation range for number of basis sets (excluding empty set)
 min_basis_sets=3
 max_basis_sets=14 # union close currently needs up to 2**n operations
 
-# generation range for minimum member cardinality
+# generation range for minimum member cardinality (excluding empty set)
 min_member_card_min=1
 min_member_card_max=13
 
