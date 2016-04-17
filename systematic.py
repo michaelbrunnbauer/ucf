@@ -15,7 +15,7 @@ m=int(sys.argv[1])
 track_progress=False
 
 # number of todos (search space branches) to collect for progress meter
-min_todo=5000
+min_todo=1000
 
 # parent_tracking is much faster but needs more mem
 # mandatory if track_progress=True
