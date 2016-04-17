@@ -33,8 +33,8 @@ avoid_isomorphisms=True
 
 # member compare for sorting (by cardinality first)
 def member_cmp(A,B):
-    # isomorphisms are recognized earlier with ascending cardinality,
-    # causing dontremove to grow earlier, which reduces the search space
+    # ascending cardinality causes small members and isomorphisms to be
+    # added to dontremove early, which reduces the search space
     if len(A) > len(B):
         return 1
     elif len(A) < len(B):
@@ -143,6 +143,8 @@ def search(A,dontremove):
 def get_todos(B,dontremove):
     global bestscore,cnt
 
+    assert parent_tracking
+
     # list of families that have been searched
     if avoid_isomorphisms:
         done=[]
@@ -212,6 +214,7 @@ def get_todos(B,dontremove):
 
 # expand todo list from get_todos by calling get_todos for every todo
 def expand_todo(todo):
+    assert parent_tracking
     new_todo=[]
     for A,member,dontremove,basis_sets_size in todo:
         A.remove(member)
@@ -225,6 +228,7 @@ def expand_todo(todo):
 # same as search(), but with progress output
 # get min_todo todos (branches of search space) and work through them
 def search_progress(A,dontremove):
+    assert parent_tracking
 
     todo_recursion=get_todos(A,dontremove)
     while len(todo_recursion) and len(todo_recursion) < min_todo:
