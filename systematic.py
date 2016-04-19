@@ -75,8 +75,7 @@ def search(A,dontremove,max_cnt=0):
     # list of members to remove so that the family stays separating
     # and has the same universe
     todo=list(A.basis_sets)
-    if avoid_isomorphisms:
-        todo.sort(cmp=member_cmp)
+    todo.sort(cmp=member_cmp)
     for member in todo:
         # removing the empty set is pointless
         if not member:
@@ -173,8 +172,7 @@ def get_todos(B,dontremove):
     # list of members to remove so that the family stays separating
     # and has the same universe
     todo=list(B.basis_sets)
-    if avoid_isomorphisms:
-        todo.sort(cmp=member_cmp)
+    todo.sort(cmp=member_cmp)
     todo_recursion=[]
     for member in todo:
         # removing the empty set is pointless
