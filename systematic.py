@@ -14,8 +14,8 @@ from family import familymember,emptymember,family
 # and calling systematic.py with the todo file as command line argument. The
 # todo file can be split for paralell processing with split_todo.py.
 
-# tracking progress is slower and needs more mem but estimates on runtime are
-# crucial
+# tracking progress is slower and needs more mem but enables stopping, 
+# resuming, paralell processing and estimates on runtime. useful for m>5.
 track_progress=True
 
 # number of todos (search space branches) to collect for progress meter
@@ -103,7 +103,7 @@ def search(A,dontremove,max_cnt=0):
                 B.unremove()
             raise RuntimeException
 
-        if not cnt % 1000:
+        if track_progress and not max_cnt and not cnt % 1000:
             if os.path.exists('stop'):
                 if parent_tracking:
                     B.unremove()   
