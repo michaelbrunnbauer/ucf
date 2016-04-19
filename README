@@ -1,11 +1,22 @@
 This code was written for Python 2.x and has been tested with Python 2.7.x.
 
+Systematic search for certain families
+--------------------------------------
+
 systematic.py is called with the size m of the universe as command line argument
 and will search all families that separate this universe for families where 
-the total abundance is lower than m. This is feasible for m <= 5.
+the total abundance is lower than m.
 
 The total abundance is the sum of (frequency - n/2 + 1) for all abundant
 elements.
+
+If track_progress=True, you can stop calculation and save the current todos by
+creating a file named "stop". Calculation can be resumed by removing this file
+and calling systematic.py with the todo file as command line argument. The 
+todo file can be split for paralell processing with split_todo.py.
+
+Random sampling
+---------------
 
 database.py will let you generate random, union closed, separating families as
 a function of several parameters:

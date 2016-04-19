@@ -1,18 +1,22 @@
 #!/usr/bin/python
 
-import sys,copy,random
+import sys,copy,random,os
+import cPickle as pickle
 from family import familymember,emptymember,family
 
-# search all separating families for a given universe for families where
-# the sum of (frequency - n/2 + 1) for all abundant elements is lower than m
-# only families with the empty set are considered
-
-# supply size of universe as command line argument
-m=int(sys.argv[1])
+# Search all separating families for a given universe for families where
+# the sum of (frequency - n/2 + 1) for all abundant elements is lower than m.
+# Only families with the empty set are considered.
+# Supply size of universe or todo file as command line argument.
+#
+# If track_progress=True, you can stop calculation and save the current todos by
+# creating a file named "stop". Calculation can be resumed by removing this file
+# and calling systematic.py with the todo file as command line argument. The
+# todo file can be split for paralell processing with split_todo.py.
 
 # tracking progress is slower and needs more mem but estimates on runtime are
 # crucial
-track_progress=False
+track_progress=True
 
 # number of todos (search space branches) to collect for progress meter
 min_todo=1000
@@ -23,6 +27,7 @@ parent_tracking=True
 
 if track_progress:
     assert parent_tracking
+    assert not os.path.exists('stop')
 
 # do not search branches isomorphic to ones already searched?
 avoid_isomorphisms=True
@@ -50,9 +55,12 @@ def member_cmp(A,B):
     else:
         return 1
 
+class RuntimeException(Exception):
+    pass
+
 # search for separating families better than bestscore by recursively removing
 # basis sets from A. dontremove is a list of members that should not be removed
-def search(A,dontremove):
+def search(A,dontremove,max_cnt=0):
     global bestscore,cnt
 
     # dontremove will be extended by the paths we have followed so that
@@ -90,6 +98,16 @@ def search(A,dontremove):
             continue
 
         cnt+=1
+        if max_cnt and cnt > max_cnt:
+            if parent_tracking:  
+                B.unremove()
+            raise RuntimeException
+
+        if not cnt % 1000:
+            if os.path.exists('stop'):
+                if parent_tracking:
+                    B.unremove()   
+                raise RuntimeException
 
         if not parent_tracking:
             B.unionclose()
@@ -129,14 +147,17 @@ def search(A,dontremove):
             done.append(C)
 
         # recurse
-        search(B,dontremove)
+        try:
+            # no need to recurse if empty set is only candidate to remove
+            if len(dontremove) < len(B.basis_sets) - 1:
+                search(B,dontremove,max_cnt=max_cnt)
+        finally:
+            if parent_tracking:
+                B.unremove()  
 
         # we have now searched every possibility without member so removing
         # member is not necessary from now on
         dontremove.append(member)
-
-        if parent_tracking:
-            B.unremove()
 
 # this is like search, but it will construct a todo list of branches to
 # search instead of recursing
@@ -200,8 +221,10 @@ def get_todos(B,dontremove):
             C.elem_count=dict(B.elem_count)
             done.append(C)
 
-        # save a reference to B and the member that should be removed
-        todo_recursion.append((B,member,list(dontremove),len(B.basis_sets)))
+        # no need to recurse if empty set is only candidate to remove
+        if len(dontremove) < len(B.basis_sets) - 1:
+            # save a reference to B and the member that should be removed
+            todo_recursion.append((B,member,list(dontremove),len(B.basis_sets)))
 
         # restore original state of B
         B.unremove()
@@ -225,14 +248,32 @@ def expand_todo(todo):
         A.unremove()
     return new_todo
 
+# spend some time on removing easy candidates
+def remove_easy_todos(todo):
+    global cnt
+    new_todo=[]
+    for B,member,dontremove,basis_sets_size in todo:
+        B.remove(member)
+        old_cnt=cnt
+        try:
+            search(B,dontremove,max_cnt=cnt+100)
+        except RuntimeException:
+            new_todo.append((B,member,dontremove,basis_sets_size))
+            cnt=old_cnt
+        B.unremove()
+    return new_todo
+
 # same as search(), but with progress output
 # get min_todo todos (branches of search space) and work through them
-def search_progress(A,dontremove):
+def search_progress(todo_recursion):
     assert parent_tracking
 
-    todo_recursion=get_todos(A,dontremove)
-    while len(todo_recursion) and len(todo_recursion) < min_todo:
+    while len(todo_recursion) < min_todo:
         todo_recursion=expand_todo(todo_recursion)
+        if not len(todo_recursion):
+            break
+        if len(todo_recursion) >= min_todo:
+            todo_recursion=remove_easy_todos(todo_recursion)
 
     print len(todo_recursion),"todos"
     sys.stdout.flush()
@@ -253,26 +294,51 @@ def search_progress(A,dontremove):
     search_space_size=float(search_space_size)
 
     searched=0
-    for B,member,dontremove,basis_sets_size in todo_recursion:
+    for B,member,dontremove,basis_sets_size in list(todo_recursion):
         searched+=search_space(basis_sets_size,len(dontremove))
         B.remove(member)
-        search(B,dontremove)
+        try:
+            search(B,dontremove)
+            todo_recursion.remove((B,member,dontremove,basis_sets_size))
+        except RuntimeException:
+            B.unremove()
+            filename='systematic.pickle'
+            if sys.argv[1].endswith('.pickle'):
+                filename=sys.argv[1]
+            print "saving",filename
+            f=open(filename,"wb")
+            pickle.dump((m,todo_recursion),f,-1)
+            return
         B.unremove()
         pct=searched/search_space_size
         print pct*100,"%"
         sys.stdout.flush()
 
-# build the power set of the universe and start the search with it
-A=family(parent_tracking=parent_tracking)
-A.add(emptymember)
-for elem in range(1,m+1):
-    A.add(familymember([elem]))
-A.unionclose()
-bestscore=A.abundant_elements_total()
-cnt=1
-if track_progress:
-    search_progress(A,[])
+cnt=0
+if sys.argv[1].endswith('.pickle'):
+    # called with todo file as argument
+    assert track_progress
+    f=open(sys.argv[1],"rb")
+    m,todo_recursion=pickle.load(f)
+    bestscore=m
+    f.close()
+    search_progress(todo_recursion)
 else:
-    search(A,[])
+    # start new calculation
+    m=int(sys.argv[1]) 
+    # build the power set of the universe and start the search with it
+    A=family(parent_tracking=parent_tracking)
+    A.add(emptymember)
+    for elem in range(1,m+1):
+        A.add(familymember([elem]))
+    A.unionclose()
+    bestscore=A.abundant_elements_total()
+    assert bestscore==m
+    cnt+=1
+    if track_progress:
+        todo_recursion=get_todos(A,[])
+        search_progress(todo_recursion)
+    else:
+        search(A,[])
 
 print cnt,"separating families searched"
